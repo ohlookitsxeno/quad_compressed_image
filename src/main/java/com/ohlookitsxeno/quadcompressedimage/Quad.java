@@ -3,6 +3,17 @@ package com.ohlookitsxeno.quadcompressedimage;
 public class Quad {
     
     private int value;
+    /*Types
+        Q - quarter
+        H - RGB
+        h - RGB (mini)
+        T - ARGB
+        t - ARGB (mini)
+        G - Gray
+        M - Gray + alpha
+        N - Transparent
+    */
+    private char type;
     private Quad TL = null;
     private Quad TR = null;
     private Quad BL = null;
@@ -42,8 +53,38 @@ public class Quad {
         isSplit = true;
     }
 
-    public void setValue(int val){value = val;}
+    public void setValue(int val){value = val; castType();}
     public int getValue(){return value;}
+
+    private void castType(){
+        int[] vrgb = {
+            (value >> 24) & 255,
+            (value >> 16) & 255,
+            (value >> 8) & 255,
+            value & 255
+        };
+        boolean alpha = vrgb[0] != 255;
+
+        if(vrgb[0] == 0)
+            type = 'N';
+        else if(vrgb[1] == vrgb[2] && vrgb[2] == vrgb[3])
+            type = alpha ? 'M' : 'G';
+        else type = alpha ? 'T' : 'H';
+    }
+
+    public String getQCI(){
+        if(isSplit) return "Q"; //just to be safe
+        if(type == 'N') return "N";
+        if(type == 'T')
+            return "T" + Integer.toHexString(value);
+        if(type == 'G')
+            return "G" + Integer.toHexString(value & 255); //grey
+        if(type == 'M')
+            return "M" + Integer.toHexString(value & 255) + Integer.toHexString((value >> 24) & 255); //grey + alpha
+        if(type == 'H')
+            return "H" + Integer.toHexString((value >> 16) & 255) + Integer.toHexString((value >> 8) & 255) + Integer.toHexString(value & 255);
+        return "";
+    }
 
     public Quad getTL(){return TL;}
     public Quad getTR(){return TR;}

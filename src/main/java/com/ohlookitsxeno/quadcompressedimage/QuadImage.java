@@ -6,6 +6,8 @@ public class QuadImage {
     
     private Quad root;
     private BufferedImage image;
+    private int splits = 0;
+    private boolean maxSplit = false;
 
     public QuadImage(){
         root = new Quad();
@@ -21,23 +23,31 @@ public class QuadImage {
         split(root);
     }
 
-    public void split(int n){
-        for(int i = 0; i < n; i++)
-            split();        
+    public void split(int aipo){
+        for(int i = 0; i < aipo; i++){
+            if(!maxSplit)
+                split();
+            else
+                return;
+        }          
     }
     private void split(Quad q){
         if(!q.isSplit()){
             q.split();
+            splits++;
             for(Quad qu : q.getQuads()){
                 int avg = average(qu.getX(),qu.getY(),qu.getW(),qu.getH());
                 qu.setValue(avg);
             }
         }else{
             Quad max = maxError(q);
-            if(error(max.getX(),max.getY(),max.getW(),max.getH(),max.getValue()) != 0)
+            if(error(max.getX(),max.getY(),max.getW(),max.getH(),max.getValue()) != 0){
                 split(max);
-            else
-                System.out.println("max splits achieved, stopping.");
+                splits++;
+            }else{
+                System.out.println("max splits achieved at " + splits + ", stopping.");
+                maxSplit = true;
+            }
         }
     }
     //average over a range of image
@@ -98,5 +108,29 @@ public class QuadImage {
             if(errors[i] > errors[max]) max = i;
         }
         return quads[max];
+    }
+
+    public Quad getRoot(){
+        return root;
+    }
+
+    public BufferedImage render(){
+        BufferedImage out = new BufferedImage(root.getW(),root.getH(),BufferedImage.TYPE_INT_ARGB);
+        renderer(root,out);
+        return out;
+    }
+    private void renderer(Quad q, BufferedImage i){
+        if(q.isSplit()){
+            for(Quad s : q.getQuads())
+                renderer(s,i);
+
+        }else{
+            for(int x = q.getX(); x < q.getX()+q.getW(); x++){
+                for(int y = q.getY(); y < q.getY()+q.getH(); y++){
+                    i.setRGB(x,y,q.getValue());
+                }
+            }
+        }
+        
     }
 }
