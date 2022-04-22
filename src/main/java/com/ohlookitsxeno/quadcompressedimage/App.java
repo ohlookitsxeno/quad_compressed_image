@@ -11,11 +11,13 @@ public class App
     BufferedImage wawa;
     public static void main( String[] args ) throws IOException
     {
-        BufferedImage test = ImageIO.read(new File("D:\\Documents\\VSCode\\quad_compressed_image\\test\\jinx.png")); //placeholder test image
+        BufferedImage test = ImageIO.read(new File("D:\\Documents\\VSCode\\quad_compressed_image\\testfolder\\jinx.png")); //placeholder test image
         
 
         QuadImage q = new  QuadImage(test);
+        FileProcessor fp = new FileProcessor();
+
         q.split(5);
-        //fm.encode(q)
+        System.out.println(fp.encodeQCI(q));
     }
 }

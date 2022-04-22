@@ -33,17 +33,11 @@ public class QuadImage {
                 qu.setValue(avg);
             }
         }else{
-            Quad[] quads = q.getQuads();
-            Double[] errors = {0.0,0.0,0.0,0.0};
-            int min = 0;
-            for(int i = 0; i < 4; i++){
-                errors[i] = error(quads[i].getX(), quads[i].getY(), quads[i].getW(), quads[i].getH(), quads[i].getValue());
-                if(errors[i] < errors[min] && errors[i] != 0) min = i;
-                if(errors[min] == 0 && errors[i] != 0) min = i;
-            }
-            if(errors[min] != 0)
-                split(quads[min]);
-            System.out.println("Errors: "+errors[0] + "," + errors[1] + "," + errors[2] + "," + errors[3] + ", min:" + min);
+            Quad max = maxError(q);
+            if(error(max.getX(),max.getY(),max.getW(),max.getH(),max.getValue()) != 0)
+                split(max);
+            else
+                System.out.println("max splits achieved, stopping.");
         }
     }
     //average over a range of image
@@ -63,7 +57,7 @@ public class QuadImage {
         if(pixels == 0) return -1;
         for(int i = 0; i < 4; i++)
             trgb[i] /= pixels;
-        System.out.println("average: " + trgb[0] + ","+ trgb[1] + ","+ trgb[2] + ","+ trgb[3]);
+        //System.out.println("average: " + trgb[0] + ","+ trgb[1] + ","+ trgb[2] + ","+ trgb[3]); //debug line
         return (trgb[0]<<24) | (trgb[1] << 16) | (trgb[2] << 8) | trgb[3];
     }
 
@@ -87,7 +81,22 @@ public class QuadImage {
                 sum += difference * difference/3;
             }
         }
-        System.out.println(sum);
         return sum/(iw*ih);
+    }
+
+    public Quad maxError(Quad q){
+        if(!q.isSplit())
+            return q;
+        
+        Quad[] quads = q.getQuads();
+        Double[] errors = {0.0,0.0,0.0,0.0};
+        int max = 0;
+
+        for(int i = 0; i < 4; i++){
+            quads[i] = maxError(quads[i]);
+            errors[i] = error(quads[i].getX(), quads[i].getY(), quads[i].getW(), quads[i].getH(), quads[i].getValue());
+            if(errors[i] > errors[max]) max = i;
+        }
+        return quads[max];
     }
 }

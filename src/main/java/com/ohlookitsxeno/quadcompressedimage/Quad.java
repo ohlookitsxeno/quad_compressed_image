@@ -7,7 +7,7 @@ public class Quad {
     private Quad TR = null;
     private Quad BL = null;
     private Quad BR = null;
-    boolean isSplit;
+    private boolean isSplit;
 
     private int[] pos;
     private int[] dim;
