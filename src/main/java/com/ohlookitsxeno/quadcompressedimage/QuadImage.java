@@ -25,12 +25,14 @@ public class QuadImage {
 
     public void split(int aipo){
         for(int i = 0; i < aipo; i++){
+            if(i % 100 == 0) System.out.println("Split " + i);
             if(!maxSplit)
                 split();
             else
                 return;
         }          
     }
+
     private void split(Quad q){
         if(!q.isSplit()){
             q.split();
@@ -41,14 +43,10 @@ public class QuadImage {
             }
         }else{
             Quad max = maxError(q);
-            if(error(max.getX(),max.getY(),max.getW(),max.getH(),max.getValue()) != 0){
-                split(max);
-                splits++;
-            }else{
-                System.out.println("max splits achieved at " + splits + ", stopping.");
-                maxSplit = true;
-            }
+
+            split(max);
         }
+
     }
     //average over a range of image
     public int average(int px, int py, int iw, int ih){
@@ -71,66 +69,106 @@ public class QuadImage {
         return (trgb[0]<<24) | (trgb[1] << 16) | (trgb[2] << 8) | trgb[3];
     }
 
-    public double error(int px, int py, int iw, int ih, int col){
-        double sum = 0;
-        int[] crgb = {
-            (col >> 24) & 255,
-            (col >> 16) & 255,
-            (col >> 8) & 255,
-            col & 255
-        };
+    public double error(BufferedImage a, BufferedImage b){
+        double[] sum = {0,0,0,0};
+        int w = a.getWidth();
+        int h = a.getHeight();
+        for(int x = 0; x < w; x++){
+            for(int y = 0; y < h; y++){
+                int acol = a.getRGB(x, y);
+                int bcol = b.getRGB(x, y);
 
-        for(int x = px; x < px+iw; x++){
-            for(int y = py; y < py+ih; y++){
-                double difference = 0;
-                int ocol = image.getRGB(x, y);
-                difference += Math.abs(crgb[0] - (ocol >> 24) & 255)/255.;
-                difference += Math.abs(crgb[1] - (ocol >> 16) & 255)/255.;
-                difference += Math.abs(crgb[2] - (ocol >> 8) & 255)/255.;
-                difference += Math.abs(crgb[3] - ocol & 255)/255.;
-                sum += difference * difference/3;
+                int[] acols = {
+                    (acol >> 24) & 255,
+                    (acol >> 16) & 255,
+                    (acol >> 8) & 255,
+                    acol & 255
+                };
+                int[] bcols = {
+                    (bcol >> 24) & 255,
+                    (bcol >> 16) & 255,
+                    (bcol >> 8) & 255,
+                    bcol & 255
+                };
+                for(int i = 0; i < 4; i++)
+                    sum[i] += Math.pow((acols[i]-bcols[i])/255., 2);
             }
         }
-        return sum/(iw*ih);
+        double[] weights = {1,1,1,1};
+        double out = 0;        
+        for(int i = 0; i < 4; i++){
+            sum[i] /= w * h;
+            out += sum[i] + weights[i];
+        }
+        return out;
+
     }
 
     public Quad maxError(Quad q){
         if(!q.isSplit())
             return q;
-        
+
         Quad[] quads = q.getQuads();
         Double[] errors = {0.0,0.0,0.0,0.0};
         int max = 0;
 
         for(int i = 0; i < 4; i++){
-            quads[i] = maxError(quads[i]);
-            errors[i] = error(quads[i].getX(), quads[i].getY(), quads[i].getW(), quads[i].getH(), quads[i].getValue());
+            BufferedImage qi = render(quads[i]);
+            BufferedImage source = image.getSubimage(quads[i].getX(), quads[i].getY(), qi.getWidth(), qi.getHeight());
+            errors[i] = error(qi, source);
             if(errors[i] > errors[max]) max = i;
         }
-        return quads[max];
-    }
 
+        return maxError(quads[max]);
+    }
+    
     public Quad getRoot(){
         return root;
     }
 
     public BufferedImage render(){
         BufferedImage out = new BufferedImage(root.getW(),root.getH(),BufferedImage.TYPE_INT_ARGB);
-        renderer(root,out);
+        int[] pos = {0,0};
+        renderer(root,out,pos);
         return out;
     }
-    private void renderer(Quad q, BufferedImage i){
+    private BufferedImage render(Quad q){
+        BufferedImage out = new BufferedImage(q.getW(),q.getH(),BufferedImage.TYPE_INT_ARGB);
+        int[] pos = {q.getX(),q.getY()};
+        renderer(q,out,pos);
+        return out;
+    }
+    private void renderer(Quad q, BufferedImage i, int[] aipos){
         if(q.isSplit()){
             for(Quad s : q.getQuads())
-                renderer(s,i);
+                renderer(s,i,aipos);
 
         }else{
-            for(int x = q.getX(); x < q.getX()+q.getW(); x++){
-                for(int y = q.getY(); y < q.getY()+q.getH(); y++){
-                    i.setRGB(x,y,q.getValue());
+            for(int x = 0; x < q.getW(); x++){
+                for(int y = 0; y < q.getH(); y++){
+                    i.setRGB(x+q.getX()-aipos[0],y+q.getY()-aipos[1],q.getValue());
                 }
             }
         }
         
     }
+
+    public void addLines(BufferedImage b){
+        lining(root, b);
+    }
+    private void lining(Quad q, BufferedImage b){
+        if(q.isSplit()){
+            for(int x = q.getX(); x < q.getX() + q.getW(); x++){
+                int y = q.getY() + q.getH()/2;
+                b.setRGB(x,y,0xff000000);
+            }
+            for(int y = q.getY(); y < q.getY() + q.getH(); y++){
+                int x = q.getX() + q.getW()/2;
+                b.setRGB(x,y,0xff000000);
+            }
+            for(Quad s : q.getQuads())
+                lining(s,b);
+        }
+    }
+
 }
