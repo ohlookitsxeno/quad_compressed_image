@@ -10,7 +10,7 @@ public class Quad {
         T - ARGB
         t - ARGB (mini)
         G - Gray
-        M - Gray + alpha
+        M - alpha + gray
         N - Transparent
     */
     private char type;
@@ -53,6 +53,16 @@ public class Quad {
         isSplit = true;
     }
 
+    public void splitVal(int tl, int tr, int bl, int br){
+        split();
+
+        TL.setValue(tl);
+        TR.setValue(tr);
+        BL.setValue(bl);
+        BR.setValue(br);
+
+    }
+
     public void setValue(int val){value = val; castType();}
     public int getValue(){return value;}
 
@@ -76,14 +86,22 @@ public class Quad {
         if(isSplit) return "Q"; //just to be safe
         if(type == 'N') return "N";
         if(type == 'T')
-            return "T" + Integer.toHexString(value);
+            return "T" + hexString((value >> 24) & 255) + hexString((value >> 16) & 255) + hexString((value >> 8) & 255) + hexString(value & 255);
         if(type == 'G')
-            return "G" + Integer.toHexString(value & 255); //grey
+            return "G" + hexString(value & 255); //grey
         if(type == 'M')
-            return "M" + Integer.toHexString(value & 255) + Integer.toHexString((value >> 24) & 255); //grey + alpha
+            return "M" + hexString((value >> 24) & 255) + hexString(value & 255);  //alpha + grey
         if(type == 'H')
-            return "H" + Integer.toHexString((value >> 16) & 255) + Integer.toHexString((value >> 8) & 255) + Integer.toHexString(value & 255);
+            return "H" + hexString((value >> 16) & 255) + hexString((value >> 8) & 255) + hexString(value & 255); //r + g + b
         return "";
+    }
+
+    public String hexString(int hex){
+        String out = "";
+        out += Integer.toHexString(hex);
+        if(out.length() == 1)
+            out = "0" + out;
+        return out;
     }
 
     public Quad getTL(){return TL;}

@@ -3,9 +3,13 @@ package com.ohlookitsxeno.quadcompressedimage;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 
 public class FileProcessor {
@@ -36,10 +40,10 @@ public class FileProcessor {
 
     public void exportQCI(QuadImage qi, String s){
         String out = "QCI";
-        out += "W"+qi.getRoot().getW();
-        out += "H"+qi.getRoot().getH();
+        out += qi.getRoot().getW()+"W";
+        out += qi.getRoot().getH()+"H";
         out += encodeQCI(qi.getRoot());
-        byte[] data = out.getBytes();
+        byte[] data = out.getBytes(StandardCharsets.US_ASCII);
         File file = new File(s+".qci");
         try{
             Files.write(file.toPath(),data);
@@ -48,18 +52,83 @@ public class FileProcessor {
         }
     }
 
-    public QuadImage importQCI(Path p){
+    public QuadImage importTree(String s){
+        Path o = Paths.get(s);
         boolean success;
+        byte[] data = {};
         try{
-            byte[] data = Files.readAllBytes(p);
+            data = Files.readAllBytes(o);
             success = true;
         }catch (IOException e){success = false;}
         if(!success){
             System.out.println("File not found.");
             return null;
         }
-        System.out.println("success");
+        if(data[0] == 'Q' && data[1] == 'C' && data[2] == 'I')
+            return decodeQCI(data);
+        System.out.println("warning, invalid.");
         return null;
+    }
+
+    private QuadImage decodeQCI(byte[] data){
+        int pos = 3; //skip 3
+        StringBuilder wid = new StringBuilder();
+        StringBuilder hei = new StringBuilder();
+        while(data[pos] != 'W')
+            wid.append((char)data[pos++]);
+        pos++;
+        while(data[pos] != 'H')
+            hei.append((char)data[pos++]);
+        pos++;
+        int w = Integer.parseInt(wid.toString());
+        int h = Integer.parseInt(hei.toString());
+        QuadImage q = new QuadImage(w,h);
+        ArrayList<Byte> crop = new ArrayList<>();
+        for(byte b : Arrays.copyOfRange(data, pos, data.length)){
+          crop.add(b);
+        }
+        qciDecoder(crop, q.getRoot());
+        return q;
+    }
+
+    private String crunch(ArrayList<Byte> data, int n){
+        String out = "";
+        for(int i = 0; i < n; i++)
+            out += (char)(byte)data.remove(0);
+        return out;
+    }
+
+    private void qciDecoder(ArrayList<Byte> data, Quad q){
+        String head = crunch(data, 1);
+        if(head.equals("Q")){
+            q.split();
+            for(Quad qu : q.getQuads())
+                qciDecoder(data, qu);
+        }else if(head.equals("T")){
+            int[] argb = {
+                Integer.valueOf(crunch(data,2),16),
+                Integer.valueOf(crunch(data,2),16),
+                Integer.valueOf(crunch(data,2),16),
+                Integer.valueOf(crunch(data,2),16)
+            };
+            q.setValue((argb[0]<<24) | (argb[1] << 16) | (argb[2] << 8) | argb[3]);
+        }else if(head.equals("H")){
+            int[] rgb = {
+                Integer.valueOf(crunch(data,2),16),
+                Integer.valueOf(crunch(data,2),16),
+                Integer.valueOf(crunch(data,2),16)
+            };
+            q.setValue((255<<24) | (rgb[0] << 16) | (rgb[1] << 8) | rgb[2]);
+        }else if(head.equals("G")){
+            int grey = Integer.valueOf(crunch(data,2),16);
+            q.setValue((255<<24) | (grey << 16) | (grey << 8) | grey);
+        }else if(head.equals("M")){
+            int alpha = Integer.valueOf(crunch(data,2),16);
+            int grey = Integer.valueOf(crunch(data,2),16);
+            q.setValue((alpha<<24) | (grey << 16) | (grey << 8) | grey);
+        }else if(head.equals("N")){
+            q.setValue(0);
+        }
     }
 
     public String encodeQCI(Quad q){

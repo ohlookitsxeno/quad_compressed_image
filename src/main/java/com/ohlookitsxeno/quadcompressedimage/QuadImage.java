@@ -6,12 +6,15 @@ public class QuadImage {
     
     private Quad root;
     private BufferedImage image;
-    private int splits = 0;
     private boolean maxSplit = false;
 
     public QuadImage(){
         root = new Quad();
     }
+    public QuadImage(int w, int h){
+        root = new Quad(0, 0, w, h);
+    }
+
     public QuadImage(BufferedImage img){
         root = new Quad(0,0,img.getWidth(),img.getHeight());
         image = img; 
@@ -36,7 +39,6 @@ public class QuadImage {
     private void split(Quad q){
         if(!q.isSplit()){
             q.split();
-            splits++;
             for(Quad qu : q.getQuads()){
                 int avg = average(qu.getX(),qu.getY(),qu.getW(),qu.getH());
                 qu.setValue(avg);
