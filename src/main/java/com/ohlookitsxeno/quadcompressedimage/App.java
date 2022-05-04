@@ -7,7 +7,6 @@ public class App
     BufferedImage wawa;
     public static void main( String[] args )
     {
-        FileProcessor fp = new FileProcessor();
         
     }
 }

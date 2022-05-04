@@ -5,7 +5,6 @@ import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
@@ -14,11 +13,7 @@ import java.nio.file.*;
 
 public class FileProcessor {
 
-    public FileProcessor(){
-        
-    }
-
-    public BufferedImage importImage(String s){
+    public static BufferedImage importImage(String s){
         BufferedImage out = null;
         try{
             out = ImageIO.read(new File(s));
@@ -28,7 +23,7 @@ public class FileProcessor {
         return out;
     }
 
-    public void exportImage(BufferedImage img, String path, String ext){
+    public static void exportImage(BufferedImage img, String path, String ext){
         try {
             File out = new File(path+"."+ext);
             ImageIO.write(img, ext, out);
@@ -38,7 +33,7 @@ public class FileProcessor {
         }
     }
 
-    public void exportQCI(QuadImage qi, String s){
+    public static void exportQCI(QuadImage qi, String s){
         String out = "QCI";
         out += qi.getRoot().getW()+"W";
         out += qi.getRoot().getH()+"H";
@@ -52,7 +47,7 @@ public class FileProcessor {
         }
     }
 
-    public QuadImage importTree(String s){
+    public static QuadImage importTree(String s){
         Path o = Paths.get(s);
         boolean success;
         byte[] data = {};
@@ -70,7 +65,7 @@ public class FileProcessor {
         return null;
     }
 
-    private QuadImage decodeQCI(byte[] data){
+    private static QuadImage decodeQCI(byte[] data){
         int pos = 3; //skip 3
         StringBuilder wid = new StringBuilder();
         StringBuilder hei = new StringBuilder();
@@ -91,14 +86,14 @@ public class FileProcessor {
         return q;
     }
 
-    private String crunch(ArrayList<Byte> data, int n){
+    private static String crunch(ArrayList<Byte> data, int n){
         String out = "";
         for(int i = 0; i < n; i++)
             out += (char)(byte)data.remove(0);
         return out;
     }
 
-    private void qciDecoder(ArrayList<Byte> data, Quad q){
+    private static void qciDecoder(ArrayList<Byte> data, Quad q){
         String head = crunch(data, 1);
         if(head.equals("Q")){
             q.split();
@@ -131,7 +126,7 @@ public class FileProcessor {
         }
     }
 
-    public String encodeQCI(Quad q){
+    public static String encodeQCI(Quad q){
         if(q.isSplit()){
             String out = "Q";
             for(Quad p : q.getQuads())
