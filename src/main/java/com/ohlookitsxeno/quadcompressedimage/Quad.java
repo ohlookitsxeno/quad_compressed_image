@@ -1,17 +1,19 @@
 package com.ohlookitsxeno.quadcompressedimage;
 
+import java.util.BitSet;
+
 public class Quad {
     
     private int value;
     /*Types
-        Q - quarter
-        H - RGB
-        h - RGB (mini)
-        T - ARGB
-        t - ARGB (mini)
-        G - Gray
-        M - alpha + gray
-        N - Transparent
+        Q(000) - quarter
+        H(001) - RGB
+        h(010) - RGB (mini)
+        T(011) - ARGB
+        t(100) - ARGB (mini)
+        G(101) - Gray
+        M(110) - alpha + gray
+        N(111) - Transparent
     */
     private char type;
     private Quad TL = null;
@@ -22,12 +24,14 @@ public class Quad {
 
     private int[] pos;
     private int[] dim;
+    private double error;
 
     public Quad(){
 
     }
     public Quad(int val){
         value = val;
+        error = -1;
     }
 
     public Quad(int x, int y, int w, int h){
@@ -38,6 +42,7 @@ public class Quad {
         dim[0] = w;
         dim[1] = h;
         isSplit = false;
+        error = -1;
     }
 
     public void split(){
@@ -65,6 +70,10 @@ public class Quad {
 
     public void setValue(int val){value = val; castType();}
     public int getValue(){return value;}
+
+    public void setError(double val){error = val;}
+    public double getError(){return error;}
+
 
     private void castType(){
         int[] vrgb = {
@@ -94,6 +103,21 @@ public class Quad {
         if(type == 'H')
             return "H" + hexString((value >> 16) & 255) + hexString((value >> 8) & 255) + hexString(value & 255); //r + g + b
         return "";
+    }
+
+    public lenSet getXEI(){
+        if(isSplit){
+            lenSet out = lenSet.lenString("000");
+            for(Quad p : getQuads())
+                out = lenSet.lenCombine(out, p.getXEI());
+            return out;
+        }
+        if(type == 'N') return lenSet.lenString("111");
+        if(type == 'T') return lenSet.lenCombine(lenSet.lenString("011"),lenSet.lenVal(((value >> 24) & 255), 8),lenSet.lenVal(((value >> 16) & 255), 8),lenSet.lenVal(((value >> 8) & 255), 8),lenSet.lenVal((value & 255), 8));
+        if(type == 'G') return lenSet.lenCombine(lenSet.lenString("101"),lenSet.lenVal((value & 255), 8));
+        if(type == 'M') return lenSet.lenCombine(lenSet.lenString("110"),lenSet.lenVal(((value >> 24) & 255), 8),lenSet.lenVal((value & 255), 8));
+        if(type == 'H') return lenSet.lenCombine(lenSet.lenString("001"),lenSet.lenVal(((value >> 16) & 255), 8),lenSet.lenVal(((value >> 8) & 255), 8),lenSet.lenVal((value & 255), 8));
+        return lenSet.lenString("111");
     }
 
     public String hexString(int hex){

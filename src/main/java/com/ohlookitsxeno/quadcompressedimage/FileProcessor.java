@@ -5,9 +5,11 @@ import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 
 import javax.imageio.ImageIO;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 
@@ -44,6 +46,22 @@ public class FileProcessor {
             Files.write(file.toPath(),data);
         }catch (IOException e){
 
+        }
+    }
+
+    public static void exportXEI(QuadImage qi, String s){
+        String type = "XEI";
+        byte[] headType = type.getBytes(StandardCharsets.US_ASCII);
+        byte[] ow = ByteBuffer.allocate(4).putInt(qi.getRoot().getW()).array();
+        byte[] oh = ByteBuffer.allocate(4).putInt(qi.getRoot().getH()).array();
+        byte[] head = {headType[0],headType[1],headType[2],ow[1],ow[2],ow[3],oh[1],oh[2],oh[3]};
+        byte[] data = encodeXEI(qi.getRoot());
+
+        byte[] comb = ByteBuffer.allocate(data.length + head.length).put(head).put(data).array();
+        File file = new File(s+".xei");
+        try{
+            Files.write(file.toPath(),comb);
+        }catch (IOException e){
         }
     }
 
@@ -126,7 +144,7 @@ public class FileProcessor {
         }
     }
 
-    public static String encodeQCI(Quad q){
+    private static String encodeQCI(Quad q){
         if(q.isSplit()){
             String out = "Q";
             for(Quad p : q.getQuads())
@@ -134,5 +152,16 @@ public class FileProcessor {
             return out;
         }
         return q.getQCI();
+    }
+
+    private static byte[] encodeXEI(Quad q){
+        lenSet ls = q.getXEI();
+        byte[] out = new byte[(ls.length()+7)/8];
+        for(int i = 0; i < ls.length(); i++){
+            if(ls.get().get(i)){
+                out[out.length-(i/8)-1] |= 1<<(i%8);
+            }
+        }
+        return out;
     }
 }

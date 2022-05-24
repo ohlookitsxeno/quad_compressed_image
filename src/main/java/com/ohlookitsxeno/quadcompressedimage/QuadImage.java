@@ -28,7 +28,7 @@ public class QuadImage {
 
     public void split(int aipo){
         for(int i = 0; i < aipo; i++){
-            if(i % 100 == 0) System.out.println("Split " + i);
+            //if(i % 10 == 0) System.out.println("Split " + i);
             if(!maxSplit)
                 split();
             else
@@ -48,7 +48,7 @@ public class QuadImage {
 
             split(max);
         }
-
+        q.setError(error(q));
     }
     //average over a range of image
     public int average(int px, int py, int iw, int ih){
@@ -69,6 +69,14 @@ public class QuadImage {
             trgb[i] /= pixels;
         //System.out.println("average: " + trgb[0] + ","+ trgb[1] + ","+ trgb[2] + ","+ trgb[3]); //debug line
         return (trgb[0]<<24) | (trgb[1] << 16) | (trgb[2] << 8) | trgb[3];
+    }
+
+    private double error(Quad q){
+        if(q.getW() == 0 || q.getH() == 0) return 0;
+
+        BufferedImage qi = render(q);
+        BufferedImage sp = image.getSubimage(q.getX(), q.getY(), qi.getWidth(), qi.getHeight());
+        return error(qi, sp);
     }
 
     public double error(BufferedImage a, BufferedImage b){
@@ -115,9 +123,13 @@ public class QuadImage {
         int max = 0;
 
         for(int i = 0; i < 4; i++){
-            BufferedImage qi = render(quads[i]);
-            BufferedImage source = image.getSubimage(quads[i].getX(), quads[i].getY(), qi.getWidth(), qi.getHeight());
-            errors[i] = error(qi, source);
+            if(quads[i].getError() != -2){
+                //System.out.println("calculating" + quads[i].getError());
+                quads[i].setError(error(quads[i]));
+            }else{
+                //System.out.println("Using: " + quads[i].getError());
+            }
+            errors[i] = quads[i].getError();           
             if(errors[i] > errors[max]) max = i;
         }
 
@@ -158,18 +170,18 @@ public class QuadImage {
     public void addLines(BufferedImage b){
         lining(root, b);
     }
-    private void lining(Quad q, BufferedImage b){
+    private void lining(Quad q, BufferedImage brennen){
         if(q.isSplit()){
             for(int x = q.getX(); x < q.getX() + q.getW(); x++){
                 int y = q.getY() + q.getH()/2;
-                b.setRGB(x,y,0xff000000);
+                brennen.setRGB(x,y,0xff000000);
             }
             for(int y = q.getY(); y < q.getY() + q.getH(); y++){
                 int x = q.getX() + q.getW()/2;
-                b.setRGB(x,y,0xff000000);
+                brennen.setRGB(x,y,0xff000000);
             }
             for(Quad s : q.getQuads())
-                lining(s,b);
+                lining(s,brennen);
         }
     }
 

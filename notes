@@ -1,3 +1,110 @@
 classes:
 
 quad: data structure
+
+000 - Q - Quartered
+001 - H - Hex #ed5443
+010 - h - 3hex  #e54
+011 - T - HEX + A #ed5443ff
+100 - t - 3hex + a  #e54f
+101 - G - Grayscale #ff
+110 - g - grayscale + a  #ffaa
+111 - N - blank/transparent
+
+q (03) - 000
+H (27) - 001 1111 1111 1111 1111 1111 1111
+h (15) - 010 1111 1111 1111
+T (35) - 011 0000 0000 0000 0000 0000 0000 1111 1111
+t (19) - 100 0000 0000 0000 1111
+G (11) - 101 1111 1111
+g (19) - 110 0000 0000 1111 1111
+B (03) - 111
+
+-file
+-encode
+-splits x - amount of times to split
+-error % - desired error (in %)
+-size xB/kb/mb/gb - target file size
+-out 
+
+size goal:
+-lossless split until bigger than goal
+-redux until under goal
+-split until bigger than goal
+-redux
+
+H111111H222222T333333ffH444444
+
+h111h222t333fh444
+
+010 0001000x10001 010 001000100010 
+
+q
+  h111
+  h122
+  q
+    Hed5443
+    t124a
+    h432
+    h624
+  h144
+h222
+t333f
+h444
+
+000
+  h111
+  h122
+  q
+    Hed5443
+    t124a
+    h432
+    h624
+  h144
+h222
+t333f
+h444
+
+qh111h122qHed5443t124ah432h624h144h222t333fh444
+
+qh111h122h133h144h222t333fh444
+
+
+QC154152C283848C123232C536128C423232C684684C354212C568468
+
+16x9
+  8x5
+    4x3
+      2x2
+        1x1
+      2x1
+        1x1
+        1x0
+    4x2
+      2x1
+        1x1
+        1x0
+  8x4
+    4x2
+      2x1
+        1x1
+        1x0
+
+12x2
+  6x1  
+    3x1
+      2x1
+      1x1
+      2x0
+      1x0
+    3x0
+
+header
+
+QCI 256 256
+
+XEIWWWHHHS
+XEI (3) - file type
+WWW (3) - Width (max 16,777,216)
+HHH (3) - Height (max 16,777,216)
+S (0-1) - End of file, complete byte.
